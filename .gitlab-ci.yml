@@ -1,0 +1,30 @@
+stages:
+  - deploy
+  - tools
+
+before_script:
+  - mkdir -p ~/.ssh
+  - echo "$neo" | tr -d '\r' > ~/.ssh/id_rsa
+  - chmod 600 ~/.ssh/id_rsa
+  - eval "$(ssh-agent -s)"
+  - ssh-keyscan -H '103.89.3.173' >> ~/.ssh/known_hosts
+  - ssh-add ~/.ssh/id_rsa
+
+
+deploy:
+  stage: deploy
+  tags:
+    - gitlab-org
+  script:
+    - pwd
+    - ssh -i  ~/.ssh/id_rsa deploy@103.89.3.173 'cd /var/www/apijobiz.sobatteknologi.com/htdocs/ && sudo git pull'
+    - ssh -i  ~/.ssh/id_rsa deploy@103.89.3.173 'sudo chown -R www-data:www-data /var/www/apijobiz.sobatteknologi.com/htdocs/*'
+
+composer_install:
+  stage: tools
+  tags:
+    - gitlab-org
+  script:
+    - ssh -i  ~/.ssh/id_rsa deploy@103.89.3.173 'cd /var/www/apijobiz.sobatteknologi.com/htdocs/ && sudo composer install'
+    - ssh -i  ~/.ssh/id_rsa deploy@103.89.3.173 'sudo chown -R www-data:www-data /var/www/apijobiz.sobatteknologi.com/htdocs/*'
+  when: manual

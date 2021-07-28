@@ -80,5 +80,26 @@ class Transaction extends RestController {
 		}
 		$this->response($response, 200);
 	}
+
+	public function flagTransaction_post() {
+		$response 	= array('status' => false, 'message' => 'Data gagal diperbaharui');
+		$userId		= $this->user->id;
+		$post		= $this->post(null, true);
+		$id			= $post['id'];
+		$status		= $post['status'];
+
+		$check		= $this->general->getDataById($id, 'transaction');
+		if (!empty($check->id)) {
+			if ($check->id_guru == $userId) {
+				if ($this->general->updateData($id, 'transaction', array('status' => $status))) {
+					$response['status'] 	= true;
+					$response['message'] 	= 'Data berhasil diperbaharui';
+				}
+			} else {
+				$response['message']	= 'Kamu tidak memiliki hak akses';
+			}
+		}
+		$this->response($response, 200);
+	}
 }
 ?>

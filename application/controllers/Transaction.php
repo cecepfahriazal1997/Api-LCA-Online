@@ -19,6 +19,11 @@ class Transaction extends RestController {
 		$response 	= array('status' => false, 'message' => 'Data tidak ditemukan');
 		$list		= $this->model->getListTransaction($this->user->id, array_search($this->user->role, $this->auth->roleCode));
 		if (!empty($list)) {
+			foreach ($list as $key => $row) {
+				$list[$key]['tipe']		= ucwords($row['tipe']);
+				$list[$key]['waktu']	= date('d M y - H:i');
+				$list[$key]['jam']		= date('H:i', strtotime($row['hour']));
+			}
 			$response['status']		= true;
 			$response['message']	= '';
 			$response['data']	 	= $list;
@@ -98,6 +103,39 @@ class Transaction extends RestController {
 			} else {
 				$response['message']	= 'Kamu tidak memiliki hak akses';
 			}
+		}
+		$this->response($response, 200);
+	}
+
+	public function delete_post() {
+		$response 	= array('status' => false, 'message' => 'Data gagal dihapus');
+		$userId		= $this->user->id;
+		$post		= $this->post(null, true);
+		$id			= $post['id'];
+
+		$check		= $this->general->getDataById($id, 'transaction');
+		if (!empty($check->id)) {
+			if ($check->id_santri == $userId) {
+				if ($this->general->deleteData($id, 'transaction')) {
+					$response['status'] 	= true;
+					$response['message'] 	= 'Data berhasil dihapus';
+				}
+			} else {
+				$response['message']	= 'Kamu tidak memiliki hak akses';
+			}
+		}
+		$this->response($response, 200);
+	}
+
+	public function listTeacher_get() {
+		$response 	= array('status' => false, 'message' => 'Data tidak ditemukan');
+		$userId		= $this->user->id;
+
+		$list		= $this->general->getDataWhere('user_akses', 'id, nama, alamat, no_hp, foto, "0" as jarak', array('level_user' => '10'), 'list', array('nama', 'asc'));
+		if (!empty($list)) {
+			$response['status']		= true;
+			$response['message']	= '';
+			$response['data']		= $this->general->replaceArrayNull($list);
 		}
 		$this->response($response, 200);
 	}

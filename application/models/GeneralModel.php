@@ -39,11 +39,11 @@ class GeneralModel extends CI_Model {
 		return $this->db->get($table)->result();
 	}
 
-	public function getDataWhere($table, $where, $type='result') {
-		if ($type == 'result') {
-			return $this->db->get_where($table, $where)->result();
+	public function getDataWhere($table, $select='*', $where, $type='single', $orderBy=array('id', 'asc')) {
+		if ($type == 'list') {
+			return $this->db->select($select)->order_by($orderBy[0], $orderBy[1])->get_where($table, $where)->result_array();
 		} else {
-			return $this->db->get_where($table, $where)->last_row();
+			return $this->db->select($select)->order_by($orderBy[0], $orderBy[1])->get_where($table, $where)->last_row();
 		}
 	}
 

@@ -96,9 +96,18 @@ class Transaction extends RestController {
 		$check		= $this->general->getDataById($id, 'transaction');
 		if (!empty($check->id)) {
 			if ($check->id_guru == $userId) {
+				if ($status == 'wait')
+					$status = 'confirm';
+				elseif ($status == 'confirm')
+					$status = 'on_the_way';
+				elseif ($status == 'on_the_way')
+					$status = 'on_progress';
+				elseif ($status == 'on_progress')
+					$status = 'done';
 				if ($this->general->updateData($id, 'transaction', array('status' => $status))) {
-					$response['status'] 	= true;
-					$response['message'] 	= 'Data berhasil diperbaharui';
+					$response['status'] 		= true;
+					$response['message'] 		= 'Data berhasil diperbaharui';
+					$response['data']['status']	= $status;
 				}
 			} else {
 				$response['message']	= 'Kamu tidak memiliki hak akses';

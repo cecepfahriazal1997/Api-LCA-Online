@@ -130,8 +130,9 @@ class Transaction extends RestController {
 	public function listTeacher_get() {
 		$response 	= array('status' => false, 'message' => 'Data tidak ditemukan');
 		$userId		= $this->user->id;
+		$dataUser	= $this->general->getDataById($userId, 'user_akses');
 
-		$list		= $this->general->getDataWhere('user_akses', 'id, nama, alamat, no_hp, foto, "0" as jarak', array('level_user' => '10'), 'list', array('nama', 'asc'));
+		$list		= $this->general->getDataWhere('user_akses', 'id, nama, alamat, no_hp, foto, "0" as jarak', array('level_user' => '10', 'jenis_kelamin' => $dataUser->jenis_kelamin), 'list', array('nama', 'asc'));
 		if (!empty($list)) {
 			$response['status']		= true;
 			$response['message']	= '';

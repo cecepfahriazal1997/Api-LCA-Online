@@ -92,7 +92,7 @@ class Transaction extends RestController {
 		$post		= $this->post(null, true);
 		$id			= $post['id'];
 		$status		= $post['status'];
-
+		
 		$check		= $this->general->getDataById($id, 'transaction');
 		if (!empty($check->id)) {
 			if ($check->id_guru == $userId) {
@@ -104,10 +104,22 @@ class Transaction extends RestController {
 					$status = 'on_progress';
 				elseif ($status == 'on_progress')
 					$status = 'done';
-				if ($this->general->updateData($id, 'transaction', array('status' => $status))) {
-					$response['status'] 		= true;
-					$response['message'] 		= 'Data berhasil diperbaharui';
-					$response['data']['status']	= $status;
+
+				$isAllow = true;
+				// presence proccess
+				if ($status == 'done') {
+					$distance = $this->general->distance(-6.877691211509606, 107.50207356898513, -6.877280779967845, 107.50289867244028);
+					$isAllow = ($distance <= 100);
+				}
+
+				if ($isAllow) {
+					if ($this->general->updateData($id, 'transaction', array('status' => $status))) {
+						$response['status'] 		= true;
+						$response['message'] 		= 'Data berhasil diperbaharui';
+						$response['data']['status']	= $status;
+					}
+				} else {
+					$response['message']	= 'Kamu tidak ada dilokasi';
 				}
 			} else {
 				$response['message']	= 'Kamu tidak memiliki hak akses';

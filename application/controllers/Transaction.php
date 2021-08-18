@@ -108,7 +108,7 @@ class Transaction extends RestController {
 				$isAllow = true;
 				// presence proccess
 				if ($status == 'done') {
-					$distance = $this->general->distance(-6.877691211509606, 107.50207356898513, -6.877280779967845, 107.50289867244028);
+					$distance = $this->general->distance(-6.877691211509606, 107.50207356898513, -6.87723817340267, 107.50293890557387);
 					$isAllow = ($distance <= 100);
 				}
 

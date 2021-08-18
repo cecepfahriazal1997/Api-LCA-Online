@@ -86,7 +86,7 @@ class GeneralModel extends CI_Model {
 		$dist = rad2deg($dist);
 		$miles = $dist * 60 * 1.1515;
 
-		return round(($miles * 1.609344), 2) * 1000;
+		return round(($miles * 1.609344), 2, PHP_ROUND_HALF_EVEN) * 1000;
 	}
 	
 	public function uploadSingleFile($title, $path, $extension='jpeg|jpg|png', $overwrite=true) {

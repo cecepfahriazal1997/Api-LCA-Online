@@ -13,12 +13,14 @@ class TransactionModel extends CI_Model {
 	}
 
 	public function getListTransaction($userId, $role) {
-		$this->db->select('transaction.*, user_akses.nama, user_akses.foto', false);
 		if ($role == 'santri') {
+			$this->db->select('transaction.*, user_akses.nama, user_akses.foto', false);
 			$this->db->join('user_akses', 'user_akses.id = transaction.id_guru', 'inner');
 			$this->db->where('transaction.id_santri', $userId);
 		} elseif ($role == 'ustad') {
+			$this->db->select('transaction.*, user_akses.nama, user_akses.foto, IF(kehadiran_guru.id is not null, "1", "0") as presence, kehadiran_guru.catatan', false);
 			$this->db->join('user_akses', 'user_akses.id = transaction.id_santri', 'inner');
+			$this->db->join('kehadiran_guru', 'transaction.id = kehadiran_guru.id_transaction AND kehadiran_guru.id_user = ' . $userId, 'left');
 			$this->db->where('transaction.id_guru', $userId);
 		}
 		$this->db->order_by('transaction.create_at', 'desc');

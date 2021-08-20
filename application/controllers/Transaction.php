@@ -26,7 +26,7 @@ class Transaction extends RestController {
 			}
 			$response['status']		= true;
 			$response['message']	= '';
-			$response['data']	 	= $list;
+			$response['data']	 	= $this->general->replaceArrayNull($list);
 		}
 		$this->response($response, 200);
 	}
@@ -92,34 +92,43 @@ class Transaction extends RestController {
 		$post		= $this->post(null, true);
 		$id			= $post['id'];
 		$status		= $post['status'];
-		
+		$lat		= $post['lat'];
+		$lng		= $post['lng'];
+
 		$check		= $this->general->getDataById($id, 'transaction');
 		if (!empty($check->id)) {
 			if ($check->id_guru == $userId) {
-				if ($status == 'wait')
-					$status = 'confirm';
-				elseif ($status == 'confirm')
-					$status = 'on_the_way';
-				elseif ($status == 'on_the_way')
-					$status = 'on_progress';
-				elseif ($status == 'on_progress')
-					$status = 'done';
-
-				$isAllow = true;
-				// presence proccess
-				if ($status == 'done') {
-					$distance = $this->general->distance(-6.877691211509606, 107.50207356898513, -6.87723817340267, 107.50293890557387);
-					$isAllow = ($distance <= 100);
-				}
-
-				if ($isAllow) {
-					if ($this->general->updateData($id, 'transaction', array('status' => $status))) {
-						$response['status'] 		= true;
-						$response['message'] 		= 'Data berhasil diperbaharui';
-						$response['data']['status']	= $status;
-					}
+				if (empty($lat) || empty($lng)) {
+					$response['message']	= 'Aktifkan lokasi kamu';
 				} else {
-					$response['message']	= 'Kamu tidak ada dilokasi';
+					if ($status == 'wait')
+						$status = 'confirm';
+					elseif ($status == 'confirm')
+						$status = 'on_the_way';
+					elseif ($status == 'on_the_way')
+						$status = 'on_progress';
+					elseif ($status == 'on_progress')
+						$status = 'done';
+	
+					$isAllow = true;
+					// presence proccess
+					if ($status == 'done') {
+						$latLngExp = explode(",", $check->lat_lng);
+						$lat2 = $latLngExp[0];
+						$lng2 = $latLngExp[1];
+						$distance = $this->general->distance($lat, $lng, $lat2, $lng2);
+						$isAllow = ($distance <= 100);
+					}
+	
+					if ($isAllow) {
+						if ($this->general->updateData($id, 'transaction', array('status' => $status))) {
+							$response['status'] 		= true;
+							$response['message'] 		= 'Data berhasil diperbaharui';
+							$response['data']['status']	= $status;
+						}
+					} else {
+						$response['message']	= 'Kamu tidak ada dilokasi';
+					}
 				}
 			} else {
 				$response['message']	= 'Kamu tidak memiliki hak akses';
@@ -158,6 +167,73 @@ class Transaction extends RestController {
 			$response['status']		= true;
 			$response['message']	= '';
 			$response['data']		= $this->general->replaceArrayNull($list);
+		}
+		$this->response($response, 200);
+	}
+
+	public function presence_post() {
+		$response 		= array('status' => false, 'message' => 'Absen gagal dilakukan');
+		$userId			= $this->user->id;
+		$transactionid 	= $this->post('id');
+		$date 			= $this->post('date');
+		$hour 			= $this->post('hour');
+		$lat			= $this->post('lat');
+		$lng			= $this->post('lng');
+		$dateNow		= date('Y-m-d H:i:s');
+
+		$transaction	= $this->general->getDataById($transactionid, 'transaction');
+		if (!empty($transaction)) {
+			$dateFrom 	= strtotime($transaction->tanggal);
+			$dateAbsent = strtotime($date);
+			if ($userId != $transaction->id_guru) {
+				$response 		= array('status' => false, 'message' => 'Kamu tidak memiliki hak akses');
+			} elseif ($dateFrom != $dateAbsent) {
+				$response 		= array('status' => false, 'message' => 'Tanggal absen tidak sesuai');
+			} elseif ($transaction->status != 'done') {
+				$response 		= array('status' => false, 'message' => 'Pembelajaran belum selesai');
+			} else {
+				$latLngExp = explode(",", $transaction->lat_lng);
+				$lat2 = $latLngExp[0];
+				$lng2 = $latLngExp[1];
+				$distance = $this->general->distance($lat, $lng, $lat2, $lng2);
+				if ($distance <= 100) {
+					$checkPresence	= $this->general->getDataWhere('kehadiran_guru', 'id, tanggal, jam', array('id_user' => $userId, 'id_transaction' => $transactionid), 'single');
+					if (!empty($checkPresence)) {
+						$response 		= array('status' => false, 'message' => 'Kamu telah melakukan absen pada ' . date('d F Y', strtotime($checkPresence->tanggal)) . ' ' . date('H:i', strtotime($checkPresence->jam)));
+					} else {
+						$param 						= array();
+						$param['id_transaction']	= $transactionid;
+						$param['id_user']			= $userId;
+						$param['tanggal']			= $date;
+						$param['jam']				= $hour;
+						$param['status']			= 'hadir';
+						$param['create_at']			= $dateNow;
+	
+						if ($this->general->insertData('kehadiran_guru', $param)) {
+							$response	= array('status' => true, 'message' => 'Absen berhasil dilakukan');
+						}
+					}
+				} else {
+					$response	= array('status' => false, 'message' => 'Kamu tidak ada dilokasi');
+				}
+			}
+		}
+
+		$this->response($response, 200);
+	}
+
+	public function feedback_post() {
+		$response 		= array('status' => false, 'message' => 'Feedback gagal disimpan');
+		$userId			= $this->user->id;
+		$transactionid 	= $this->post('id');
+		$note			= $this->post('note');
+		
+		$checkPresence	= $this->general->getDataWhere('kehadiran_guru', 'id, tanggal, jam', array('id_user' => $userId, 'id_transaction' => $transactionid), 'single');
+
+		if (!empty($checkPresence)) {
+			if ($this->general->updateData($checkPresence->id, 'kehadiran_guru', array('catatan' => $note))) {
+				$response	= array('status' => true, 'message' => 'Feedback berhasil disimpan');
+			}
 		}
 		$this->response($response, 200);
 	}

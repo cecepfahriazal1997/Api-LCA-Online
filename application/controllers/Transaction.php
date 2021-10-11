@@ -228,7 +228,7 @@ class Transaction extends RestController {
 		$transactionid 	= $this->post('id');
 		$note			= $this->post('note');
 		
-		$checkPresence	= $this->general->getDataWhere('kehadiran_guru', 'id, tanggal, jam', array('id_user' => $userId, 'id_transaction' => $transactionid), 'single');
+		$checkPresence	= $this->general->getDataWhere('kehadiran_guru', 'id, tanggal, jam', array('id_transaction' => $transactionid), 'single');
 
 		if (!empty($checkPresence)) {
 			if ($this->general->updateData($checkPresence->id, 'kehadiran_guru', array('catatan' => $note))) {

@@ -14,8 +14,9 @@ class TransactionModel extends CI_Model {
 
 	public function getListTransaction($userId, $role) {
 		if ($role == 'santri') {
-			$this->db->select('transaction.*, user_akses.nama, user_akses.foto, user_akses.lat_long as lat_lng_guru', false);
+			$this->db->select('transaction.*, user_akses.nama, user_akses.foto, user_akses.lat_long as lat_lng_guru, IF(kehadiran_guru.id is not null, "1", "0") as presence, kehadiran_guru.catatan', false);
 			$this->db->join('user_akses', 'user_akses.id = transaction.id_guru', 'inner');
+			$this->db->join('kehadiran_guru', 'transaction.id = kehadiran_guru.id_transaction', 'left');
 			$this->db->where('transaction.id_santri', $userId);
 		} elseif ($role == 'ustad') {
 			$this->db->select('transaction.*, user_akses.nama, user_akses.foto, IF(kehadiran_guru.id is not null, "1", "0") as presence, kehadiran_guru.catatan', false);
